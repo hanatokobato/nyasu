@@ -4,7 +4,7 @@ import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import Card from './components/Card';
 import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, lowerCase } from 'lodash';
 import GameInput from '../components/inputs/TextInput';
 import FillBlankInput from '../components/inputs/FillBlankInput';
 import Answer from './components/Answer';
@@ -15,9 +15,9 @@ enum QuestionType {
 }
 
 interface ICardLearning extends ICard {
-  isPassed: boolean;
   currentQuestion?: QuestionType;
   currentAnswer?: boolean;
+  correctCount: number;
 }
 
 const Cards = () => {
@@ -25,7 +25,10 @@ const Cards = () => {
   const searchParams = useSearchParams();
   const deckId = searchParams.get('deck_id');
   const [cards, setCards] = useState<ICardLearning[]>([]);
+  const [passedCards, setPassedCards] = useState<ICardLearning[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState<string>();
+
+  console.log(passedCards);
 
   const fetchCards = useCallback(
     async (page: number = 1, perPage: number = 10): Promise<ICard[]> => {
@@ -74,7 +77,9 @@ const Cards = () => {
     ) {
       setCards((curr) => {
         const currentCards = cloneDeep(curr);
-        currentCards[0].currentAnswer = currentAnswer === card.fields.word;
+        currentCards[0].currentAnswer =
+          lowerCase(currentAnswer) === lowerCase(card.fields.word);
+        if (currentCards[0].currentAnswer) currentCards[0].correctCount += 1;
         return currentCards;
       });
     } else if (card.currentQuestion === QuestionType.FREE_INPUT) {
@@ -89,15 +94,25 @@ const Cards = () => {
       card.currentAnswer === undefined
     ) {
       setCards((curr) => {
-        console.log(currentAnswer)
         const currentCards = cloneDeep(curr);
-        currentCards[0].currentAnswer = currentAnswer === card.fields.word;
+        currentCards[0].currentAnswer =
+          lowerCase(currentAnswer) === lowerCase(card.fields.word);
+        if (currentCards[0].currentAnswer) currentCards[0].correctCount += 1;
         return currentCards;
       });
     } else {
       setCards((curr) => {
         const currentCards = cloneDeep(curr);
-        currentCards.shift();
+        const firstCard = currentCards.shift() as ICardLearning;
+        if (firstCard.correctCount >= 2) {
+          setPassedCards((currPassed) => currPassed.concat(firstCard));
+        } else {
+          firstCard.correctCount = 0;
+          firstCard.currentQuestion = undefined;
+          firstCard.currentAnswer = undefined;
+          currentCards.push(firstCard);
+        }
+
         return currentCards;
       });
     }
@@ -107,7 +122,7 @@ const Cards = () => {
     const initCards = await fetchCards();
     const learningCards = initCards.map((card) => ({
       ...card,
-      isPassed: false,
+      correctCount: 0,
     }));
     setCards(learningCards);
   }, [fetchCards]);
