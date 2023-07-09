@@ -26,6 +26,7 @@ const Decks = () => {
         description: deck.description,
         photoUrl: deck.photoUrl,
         createdAt: deck.createdAt,
+        learning: deck.learning,
       }));
       setIsLoading(false);
 
@@ -48,7 +49,7 @@ const Decks = () => {
       <div className="flex-auto w-1/4"></div>
       <div className="flex-auto w-1/2 bg-white">
         <div className="flex justify-center flex-wrap mx-6 mt-2">
-          <div className="w-9/12">
+          <div className="w-9/12 mt-10">
             {decks.map((deck) => (
               <Link href={`/cards?deck_id=${deck.id}`} key={deck.id}>
                 <DeckItem deck={deck} />

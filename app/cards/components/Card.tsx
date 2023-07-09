@@ -3,6 +3,7 @@ import styles from './Card.module.scss';
 import MDEditor from '@uiw/react-md-editor';
 import Image from 'next/image';
 import { set } from 'react-hook-form';
+import { useMount } from 'react-use';
 
 interface IProps {
   card: ICard;
@@ -39,6 +40,13 @@ const Card = ({ card }: IProps) => {
       audio.play();
     }
   }, [audio]);
+
+  useMount(() => {
+    setTimeout(() => {
+      frontRef.current?.classList.add(styles.rotate);
+      backRef.current?.classList.add(styles.rotate);
+    }, 5000);
+  });
 
   return (
     <div

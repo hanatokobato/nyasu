@@ -8,6 +8,8 @@ import { cloneDeep, lowerCase } from 'lodash';
 import GameInput from '../components/inputs/TextInput';
 import FillBlankInput from '../components/inputs/FillBlankInput';
 import Answer from './components/Answer';
+import { useRouter } from 'next/navigation';
+import { ToastContainer, toast } from 'react-toastify';
 
 enum QuestionType {
   FREE_INPUT = 'FREE_INPUT',
@@ -21,14 +23,13 @@ interface ICardLearning extends ICard {
 }
 
 const Cards = () => {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const searchParams = useSearchParams();
   const deckId = searchParams.get('deck_id');
   const [cards, setCards] = useState<ICardLearning[]>([]);
   const [passedCards, setPassedCards] = useState<ICardLearning[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState<string>();
-
-  console.log(passedCards);
 
   const fetchCards = useCallback(
     async (page: number = 1, perPage: number = 10): Promise<ICard[]> => {
@@ -57,10 +58,9 @@ const Cards = () => {
     [deckId]
   );
 
-  const goNextHandler = useCallback(() => {
+  const goNextHandler = useCallback(async () => {
     const card = cards[0];
     if (!card) {
-      console.log('completed!');
       return;
     }
 
@@ -131,8 +131,27 @@ const Cards = () => {
     initData();
   }, [initData]);
 
+  useEffect(() => {
+    const addLearning = async () => {
+      try {
+        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/learnings`, {
+          deck_id: deckId,
+        });
+
+        router.push('/decks');
+      } catch (e: any) {
+        toast(e.message, { type: 'error' });
+      }
+    };
+
+    if (cards.length === 0 && passedCards.length > 0) {
+      addLearning();
+    }
+  }, [cards, passedCards, router, deckId]);
+
   return (
     <div className="flex bg-slate-100 h-full">
+      <ToastContainer />
       <div className="flex-auto w-1/4"></div>
       <div className="flex-auto w-2/3 bg-main-center relative">
         <div className="flex justify-center flex-wrap mx-6 mt-2">
@@ -147,6 +166,12 @@ const Cards = () => {
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setCurrentAnswer(e.target.value)
                   }
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                    if (e.key === 'Enter') {
+                      goNextHandler();
+                    }
+                  }}
+                  autoFocus
                 />
               )}
             {cards.length > 0 &&
@@ -156,6 +181,7 @@ const Cards = () => {
                   onChange={(val) => {
                     setCurrentAnswer(val.join(''));
                   }}
+                  onSubmit={goNextHandler}
                 />
               )}
           </div>
@@ -172,7 +198,9 @@ const Cards = () => {
           </button>
         </div>
         {cards.length > 0 && cards[0].currentAnswer !== undefined && (
-          <Answer card={cards[0]} isCorrect={cards[0].currentAnswer} />
+          <div className="mt-20">
+            <Answer card={cards[0]} isCorrect={cards[0].currentAnswer} />
+          </div>
         )}
       </div>
       <div className="flex-auto w-1/4"></div>

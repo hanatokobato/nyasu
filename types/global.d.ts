@@ -7,6 +7,9 @@ declare global {
     description?: string;
     photoUrl?: string;
     createdAt?: date;
+    learning: {
+      _id: string;
+    };
   }
 
   interface ICard {
