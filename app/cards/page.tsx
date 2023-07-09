@@ -4,10 +4,12 @@ import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import Card from './components/Card';
 import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
-import { cloneDeep } from 'lodash';
+import { cloneDeep, lowerCase } from 'lodash';
 import GameInput from '../components/inputs/TextInput';
 import FillBlankInput from '../components/inputs/FillBlankInput';
 import Answer from './components/Answer';
+import { useRouter } from 'next/navigation';
+import { ToastContainer, toast } from 'react-toastify';
 
 enum QuestionType {
   FREE_INPUT = 'FREE_INPUT',
@@ -15,16 +17,18 @@ enum QuestionType {
 }
 
 interface ICardLearning extends ICard {
-  isPassed: boolean;
   currentQuestion?: QuestionType;
   currentAnswer?: boolean;
+  correctCount: number;
 }
 
 const Cards = () => {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const searchParams = useSearchParams();
   const deckId = searchParams.get('deck_id');
   const [cards, setCards] = useState<ICardLearning[]>([]);
+  const [passedCards, setPassedCards] = useState<ICardLearning[]>([]);
   const [currentAnswer, setCurrentAnswer] = useState<string>();
 
   const fetchCards = useCallback(
@@ -54,10 +58,9 @@ const Cards = () => {
     [deckId]
   );
 
-  const goNextHandler = useCallback(() => {
+  const goNextHandler = useCallback(async () => {
     const card = cards[0];
     if (!card) {
-      console.log('completed!');
       return;
     }
 
@@ -74,7 +77,9 @@ const Cards = () => {
     ) {
       setCards((curr) => {
         const currentCards = cloneDeep(curr);
-        currentCards[0].currentAnswer = currentAnswer === card.fields.word;
+        currentCards[0].currentAnswer =
+          lowerCase(currentAnswer) === lowerCase(card.fields.word);
+        if (currentCards[0].currentAnswer) currentCards[0].correctCount += 1;
         return currentCards;
       });
     } else if (card.currentQuestion === QuestionType.FREE_INPUT) {
@@ -89,15 +94,25 @@ const Cards = () => {
       card.currentAnswer === undefined
     ) {
       setCards((curr) => {
-        console.log(currentAnswer)
         const currentCards = cloneDeep(curr);
-        currentCards[0].currentAnswer = currentAnswer === card.fields.word;
+        currentCards[0].currentAnswer =
+          lowerCase(currentAnswer) === lowerCase(card.fields.word);
+        if (currentCards[0].currentAnswer) currentCards[0].correctCount += 1;
         return currentCards;
       });
     } else {
       setCards((curr) => {
         const currentCards = cloneDeep(curr);
-        currentCards.shift();
+        const firstCard = currentCards.shift() as ICardLearning;
+        if (firstCard.correctCount >= 2) {
+          setPassedCards((currPassed) => currPassed.concat(firstCard));
+        } else {
+          firstCard.correctCount = 0;
+          firstCard.currentQuestion = undefined;
+          firstCard.currentAnswer = undefined;
+          currentCards.push(firstCard);
+        }
+
         return currentCards;
       });
     }
@@ -107,7 +122,7 @@ const Cards = () => {
     const initCards = await fetchCards();
     const learningCards = initCards.map((card) => ({
       ...card,
-      isPassed: false,
+      correctCount: 0,
     }));
     setCards(learningCards);
   }, [fetchCards]);
@@ -116,8 +131,27 @@ const Cards = () => {
     initData();
   }, [initData]);
 
+  useEffect(() => {
+    const addLearning = async () => {
+      try {
+        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/learnings`, {
+          deck_id: deckId,
+        });
+
+        router.push('/decks');
+      } catch (e: any) {
+        toast(e.message, { type: 'error' });
+      }
+    };
+
+    if (cards.length === 0 && passedCards.length > 0) {
+      addLearning();
+    }
+  }, [cards, passedCards, router, deckId]);
+
   return (
     <div className="flex bg-slate-100 h-full">
+      <ToastContainer />
       <div className="flex-auto w-1/4"></div>
       <div className="flex-auto w-2/3 bg-main-center relative">
         <div className="flex justify-center flex-wrap mx-6 mt-2">
@@ -132,6 +166,12 @@ const Cards = () => {
                   onChange={(e: ChangeEvent<HTMLInputElement>) =>
                     setCurrentAnswer(e.target.value)
                   }
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                    if (e.key === 'Enter') {
+                      goNextHandler();
+                    }
+                  }}
+                  autoFocus
                 />
               )}
             {cards.length > 0 &&
@@ -141,6 +181,7 @@ const Cards = () => {
                   onChange={(val) => {
                     setCurrentAnswer(val.join(''));
                   }}
+                  onSubmit={goNextHandler}
                 />
               )}
           </div>
@@ -157,7 +198,9 @@ const Cards = () => {
           </button>
         </div>
         {cards.length > 0 && cards[0].currentAnswer !== undefined && (
-          <Answer card={cards[0]} isCorrect={cards[0].currentAnswer} />
+          <div className="mt-20">
+            <Answer card={cards[0]} isCorrect={cards[0].currentAnswer} />
+          </div>
         )}
       </div>
       <div className="flex-auto w-1/4"></div>
