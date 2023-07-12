@@ -7,7 +7,11 @@ interface IProps {
 const DeckItem: React.FC<IProps> = ({ deck }) => {
   return (
     <div className="bg-neutral-200 rounded-2xl shadow-md mb-5">
-      <div className="bg-white rounded-2xl cursor-pointer -translate-y-1">
+      <div
+        className={`${
+          deck.learning ? 'bg-success text-white' : 'bg-slate-50'
+        } rounded-2xl cursor-pointer -translate-y-1 active:translate-y-1 focus:translate-y-1`}
+      >
         <div className="flex">
           <div className="w-1/6 flex items-center justify-center">
             <Image

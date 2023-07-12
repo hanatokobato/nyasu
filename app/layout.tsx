@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={quickSand.className}>
         <Header />
-        <div className="pt-16 h-screen">{children}</div>
+        <div className="pt-24 h-screen">{children}</div>
       </body>
     </html>
   );

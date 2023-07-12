@@ -5,9 +5,10 @@ import { useForm } from 'react-hook-form';
 interface IProps {
   numOfChars: number;
   onChange?: (val: string[]) => void;
+  onSubmit?: any;
 }
 
-const FillBlankInput = ({ numOfChars, onChange }: IProps) => {
+const FillBlankInput = ({ numOfChars, onChange, onSubmit }: IProps) => {
   const { register, getValues, setFocus, setValue } = useForm();
 
   const inputChangeHandler = useCallback(
@@ -33,8 +34,12 @@ const FillBlankInput = ({ numOfChars, onChange }: IProps) => {
         const values = getValues();
         if (onChange) onChange(Object.values(values));
       }
+
+      if (e.key === 'Enter') {
+        onSubmit();
+      }
     },
-    [setFocus, setValue, getValues, onChange]
+    [setFocus, setValue, getValues, onChange, onSubmit]
   );
 
   return (
@@ -50,6 +55,7 @@ const FillBlankInput = ({ numOfChars, onChange }: IProps) => {
                 maxLength={1}
                 onChange={inputChangeHandler}
                 onKeyDown={keyDownHandler}
+                autoFocus={i === 0}
               />
             ))}
           </div>
