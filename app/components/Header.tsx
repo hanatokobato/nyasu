@@ -17,9 +17,9 @@ const Header = () => {
         </div>
         <div className="w-2/4 block flex-grow flex items-center w-auto h-full">
           <Link
-            href="/review"
+            href="/"
             className={`w-1/4 flex flex-col items-center justify-center h-full ${
-              pathname === '/review' ? 'bg-white' : ''
+              pathname === '/review' || pathname === '/' ? 'bg-white' : ''
             }`}
           >
             <Image src={reviewImg} alt="" width={30} height={30} />
