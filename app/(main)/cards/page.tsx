@@ -100,12 +100,12 @@ const Cards = () => {
     setIsLoading(true);
     await loadLearningCards(deckId!);
     setIsLoading(false);
-    const learningCards = cards.map((card) => ({
-      ...card,
-      correctCount: 0,
-    }));
-    setLearingCards(learningCards);
-  }, [cards, loadLearningCards, deckId]);
+  }, [loadLearningCards, deckId]);
+
+  // The hook's list changes once per fetch; seed the working queue from it.
+  useEffect(() => {
+    setLearingCards(cards.map((card) => ({ ...card, correctCount: 0 })));
+  }, [cards]);
 
   useEffect(() => {
     if (learningCards[0]?.audioUrl) {
@@ -128,10 +128,10 @@ const Cards = () => {
       }
     };
 
-    if (cards.length === 0 && passedCards.length > 0) {
+    if (learningCards.length === 0 && passedCards.length > 0) {
       addLearning();
     }
-  }, [cards, passedCards, router, deckId, postLearning]);
+  }, [learningCards, passedCards, router, deckId, postLearning]);
 
   return (
     <div className="flex bg-slate-100 min-h-full-minus-header">

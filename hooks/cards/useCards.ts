@@ -28,7 +28,7 @@ const useCards = () => {
   const loadLearningCards = useCallback(async (deckId: string) => {
     const response: AxiosResponse<GetApiV1CardsLearning200Response> =
       await apiClient.getApiV1CardsLearning(deckId);
-    setLearningCards(response.data.data?.cards);
+    setLearningCards(response.data.data?.cards ?? []);
   }, []);
 
   const loadCards = useCallback(

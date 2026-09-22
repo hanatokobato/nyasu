@@ -39,7 +39,7 @@ const Cards = () => {
   }, [deleteCard]);
 
   const initData = useCallback(async () => {
-    await Promise.all([loadDeck(deckId!), loadCards({})]);
+    await Promise.all([loadDeck(deckId!), loadCards({ deckId })]);
   }, [deckId, loadDeck, loadCards]);
 
   const playAudio = useCallback((card: ICard) => {
