@@ -30,14 +30,14 @@ const useLearnings = () => {
   }, []);
 
   const updateLearnings = useCallback(
-    ({
+    async ({
       passedCards,
       failedCards,
     }: {
       passedCards: string[];
       failedCards: string[];
     }) => {
-      apiClient.putApiV1CardsLearning({
+      await apiClient.putApiV1CardsLearning({
         passed_cards: passedCards,
         failed_cards: failedCards,
       });

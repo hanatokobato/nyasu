@@ -43,9 +43,7 @@ const Review = () => {
     loadRandomCards,
     updateLearnings,
   } = useLearnings();
-  const [reviews, setReviews] = useState<IReviewReviewing[]>(() => {
-    return reviewCards.map((card) => ({ ...card, attemptCount: 0 }));
-  });
+  const [reviews, setReviews] = useState<IReviewReviewing[]>([]);
 
   const selectAnswerHandler = useCallback((selected: string | null) => {
     if (selected) setSelectedAnswer(selected);
@@ -120,6 +118,11 @@ const Review = () => {
     loadRandomCards();
   }, [loadReviews, loadRandomCards]);
 
+  // The hook's list changes once per fetch; seed the working queue from it.
+  useEffect(() => {
+    setReviews(reviewCards.map((card) => ({ ...card, attemptCount: 0 })));
+  }, [reviewCards]);
+
   useEffect(() => {
     if (reviews && reviews.length > 0) {
       loadRandomCards();
@@ -137,13 +140,15 @@ const Review = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (passedCards.length > 0) storeLearnings();
-
-      router.prefetch('/');
-      router.push('/');
+      // storeLearnings navigates home itself once the save has finished.
+      if (passedCards.length > 0) {
+        storeLearnings();
+      } else {
+        router.push('/');
+      }
     }, 1000 * 60 * 10);
 
-    return clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, [passedCards, storeLearnings, router]);
 
   return (
